@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#007E7A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Falhas Glova">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon-48.png" sizes="48x48">
+<link rel="icon" href="icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Diagnóstico de Falhas Glova</title>
+<style>
+:root{
+  --teal:#007E7A; --teal-d:#00524F; --teal-l:#E3F2F1;
+  --gold:#EDB111; --gold-d:#8A6400; --gold-l:#FDF4DC;
+  --slate:#2F6A8A;
+  --red:#C62828; --red-l:#FDECEC;
+  --amber:#D97A00; --amber-l:#FFF2DF;
+  --gray:#6E7173; --gray-l:#EEF0F1;
+  --ink:#1D2426; --muted:#5C6669; --line:#D8DDDF;
+  --bg:#F3F6F6; --card:#fff;
+  --surface:#fff; --surface2:#F8FAFA; --okbg:#F6FBFB; --teal-line:#BFE0DD;
+  --info-bg:rgba(255,255,255,.7); --shade:rgba(0,0,0,.07); --hit:#FFE58A; --scrim:rgba(0,0,0,.35);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--teal:#1AA39D; --teal-d:#7FD9D2; --teal-l:#12302F;
+  --gold-l:#3A3010; --red-l:#3D1E1E; --amber-l:#3B2A12; --gray:#8D9597; --gray-l:#283133;
+  --ink:#E4EBEB; --muted:#9DA9AB; --line:#2E3B3D; --bg:#0F1617; --card:#172123;
+  --surface:#172123; --surface2:#1E2A2C; --okbg:#14292A; --teal-line:#245452;
+  --info-bg:rgba(0,0,0,.25); --shade:rgba(255,255,255,.08); --hit:#6B5A12; --scrim:rgba(0,0,0,.55); color-scheme:dark;}}
+:root[data-theme="dark"]{--teal:#1AA39D; --teal-d:#7FD9D2; --teal-l:#12302F;
+  --gold-l:#3A3010; --red-l:#3D1E1E; --amber-l:#3B2A12; --gray:#8D9597; --gray-l:#283133;
+  --ink:#E4EBEB; --muted:#9DA9AB; --line:#2E3B3D; --bg:#0F1617; --card:#172123;
+  --surface:#172123; --surface2:#1E2A2C; --okbg:#14292A; --teal-line:#245452;
+  --info-bg:rgba(0,0,0,.25); --shade:rgba(255,255,255,.08); --hit:#6B5A12; --scrim:rgba(0,0,0,.55); color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;line-height:1.4}
+button{font:inherit;cursor:pointer}
+header{background:var(--surface);border-bottom:4px solid var(--teal);padding:12px 20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+header img{height:42px}
+header .tt{flex:1;min-width:220px}
+header h1{margin:0;font-size:19px}
+header p{margin:1px 0 0;color:var(--muted);font-size:12.5px}
+.search{position:relative;min-width:260px;flex:0 1 360px}
+.search input{width:100%;font:inherit;padding:10px 12px 10px 36px;border:1px solid var(--line);border-radius:10px;background:var(--surface2)}
+.search input:focus{outline:2px solid var(--teal);border-color:transparent;background:var(--surface)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.filters{display:flex;gap:6px;flex-wrap:wrap;padding:12px 20px 0}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:7px}
+.chip.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 460px;gap:18px;padding:14px 20px 20px;align-items:start}
+.layout.closed{grid-template-columns:1fr}
+.zone{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:16px}
+.zone-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.zone-h .num{background:var(--c);color:#fff;font-weight:800;border-radius:8px;padding:3px 9px;font-size:13px}
+.zone-h h2{margin:0;font-size:15.5px}
+.zone-h small{color:var(--muted);font-size:12px}
+/* controller panel look */
+.panel{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.tile{position:relative;text-align:left;border:1px solid var(--line);border-left:5px solid var(--tc);background:var(--surface);border-radius:11px;padding:11px 12px;display:flex;gap:10px;align-items:flex-start;transition:transform .12s,box-shadow .12s,border-color .12s}
+.tile:hover{transform:translateY(-2px);box-shadow:0 6px 16px var(--shade)}
+.tile:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.tile.sel{background:var(--teal-l);border-color:var(--teal);box-shadow:0 0 0 2px var(--teal) inset}
+.tile.falha{--tc:var(--red)} .tile.aviso{--tc:var(--amber)} .tile.ni{--tc:var(--gray)} .tile.sem{--tc:var(--gold)}
+.tile .nm{font-weight:700;font-size:13.5px;line-height:1.25}
+.tile .mt{font-size:11.5px;color:var(--muted);margin-top:3px}
+.tile .cnt{margin-left:auto;flex:none;font-size:11px;font-weight:700;color:var(--teal-d);background:var(--teal-l);border-radius:20px;padding:2px 8px}
+.tile .done{position:absolute;right:8px;bottom:6px;font-size:10.5px;color:var(--teal);font-weight:700}
+.tile.dim{opacity:.28}
+.hit{background:var(--hit);border-radius:3px;padding:0 1px}
+.led{flex:none;width:14px;height:14px;border-radius:50%;margin-top:2px;display:inline-block}
+.led.on.falha{background:var(--red);box-shadow:0 0 0 3px var(--red-l),0 0 7px var(--red)}
+.led.on.aviso{background:var(--amber);box-shadow:0 0 0 3px var(--amber-l),0 0 7px var(--amber)}
+.led.blink{background:var(--amber);box-shadow:0 0 0 3px var(--amber-l);animation:blink 1.1s ease-in-out infinite alternate}
+.led.blink.ni{background:var(--gray);box-shadow:0 0 0 3px var(--gray-l)}
+.led.none{border:2px dashed var(--gray)}
+@keyframes blink{to{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.led.blink{animation:none}.tile{transition:none}}
+.empty{display:none;text-align:center;color:var(--muted);padding:30px;background:var(--surface);border:1px dashed var(--line);border-radius:14px}
+
+/* detail */
+.detail{position:sticky;top:86px;max-height:calc(100vh - 100px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.layout.closed .detail{display:none}
+.d-h{padding:16px 16px 12px;background:var(--tl);border-bottom:1px solid var(--line);border-top:6px solid var(--tc);border-radius:14px 14px 0 0}
+.d-h.falha{--tc:var(--red);--tl:var(--red-l)} .d-h.aviso{--tc:var(--amber);--tl:var(--amber-l)} .d-h.ni{--tc:var(--gray);--tl:var(--gray-l)} .d-h.sem{--tc:var(--gold);--tl:var(--gold-l)}
+.d-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.d-top .x{border:0;background:var(--shade);border-radius:8px;width:30px;height:30px;font-size:18px;line-height:1}
+.d-title{display:flex;gap:10px;align-items:flex-start;margin-top:8px}
+.d-title h3{margin:0;font-size:19px;line-height:1.2}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.badge{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;border-radius:20px;padding:3px 9px;background:var(--tc);color:#fff}
+.d-h.sem .badge.t{color:#4A3600}
+.badge.o{background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+.d-info{margin:10px 0 0;font-size:12.5px;color:var(--ink);background:var(--info-bg);border-radius:8px;padding:8px 10px}
+.prog{margin-top:10px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.bar{flex:1;height:7px;background:var(--shade);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--teal);width:0;transition:width .2s}
+.steps{list-style:none;margin:0;padding:12px 14px}
+.step{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.step.ok{border-color:var(--teal-line);background:var(--okbg)}
+.step-h{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:0;background:transparent;padding:11px 12px}
+.step-h .n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--gray-l);color:var(--ink);font-weight:800;font-size:12px;display:grid;place-items:center}
+.step.ok .n{background:var(--teal);color:#fff}
+.step-h .c small{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.step-h .c{flex:1;font-size:13px}
+.step-h .chev{flex:none;color:var(--muted);transition:transform .15s;margin-top:4px}
+.step.open .chev{transform:rotate(180deg)}
+.step-b{display:none;padding:0 12px 12px 46px}
+.step.open .step-b{display:block}
+.act{background:var(--teal-l);border:1px solid var(--teal-line);border-radius:10px;padding:9px 11px;font-size:13px}
+.act small{display:block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--teal-d);margin-bottom:2px}
+.chk{display:inline-flex;align-items:center;gap:8px;margin-top:9px;font-size:12.5px;font-weight:600;color:var(--teal-d);cursor:pointer;user-select:none}
+.chk input{width:17px;height:17px;accent-color:var(--teal)}
+.d-foot{display:flex;gap:8px;padding:0 14px 14px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;font-weight:600;font-size:12.5px;color:var(--ink)}
+.btn.p{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn:hover{filter:brightness(.96)}
+.note{font-size:11.5px;color:var(--muted);font-style:italic;padding:0 14px 10px}
+.hint{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px dashed var(--teal-line);border-radius:14px;padding:12px 14px;margin-bottom:16px;color:var(--teal-d);font-size:13px}
+footer{color:var(--muted);font-size:11.5px;padding:0 20px 20px}
+.scrim{display:none}
+
+@media (max-width:980px){
+  .layout,.layout.closed{grid-template-columns:1fr}
+  .detail{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:86vh;border-radius:16px 16px 0 0;z-index:20;box-shadow:0 -10px 30px rgba(0,0,0,.25)}
+  .d-h{border-radius:16px 16px 0 0}
+  .scrim{display:block;position:fixed;inset:0;background:var(--scrim);z-index:19}
+  .layout.closed .scrim{display:none}
+}
+@media (max-width:640px){
+  header,.filters,.layout,footer{padding-left:16px;padding-right:16px}
+  .search{flex:1 1 100%;min-width:0}
+  .panel{grid-template-columns:1fr}
+}
+@media print{
+  header .search,.filters,.zones,.hint,.d-top .x,.d-foot,.scrim{display:none !important}
+  body{background:var(--surface)}
+  .layout{display:block;padding:0}
+  .detail{position:static;max-height:none;border:0;display:block !important}
+  .step-b{display:block !important}
+}
+</style>
+<style>
+#splash{position:fixed;inset:0;z-index:100;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;transition:opacity .45s ease,visibility .45s}
+#splash img{width:min(56vw,240px);height:auto;animation:splIn .6s ease-out both}
+#splash .st{font:700 18px/1.25 Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#1D2426;text-align:center}
+#splash .sb{font:500 13px Inter,"Segoe UI",Roboto,Arial,sans-serif;color:#5C6669;margin-top:-10px}
+#splash .ld{width:120px;height:4px;border-radius:4px;background:#E3F2F1;overflow:hidden}
+#splash .ld i{display:block;height:100%;width:40%;background:#007E7A;border-radius:4px;animation:splLd 1s ease-in-out infinite}
+#splash.out{opacity:0;visibility:hidden}
+@keyframes splIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+@keyframes splLd{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+@media (prefers-reduced-motion:reduce){#splash img,#splash .ld i{animation:none}}
+</style>
+<style>
+#instBtn{display:none;align-items:center;gap:8px;border:0;background:var(--teal);color:#fff;font-weight:700;padding:10px 14px;border-radius:10px}
+#instBtn.show{display:inline-flex}
+#iosTip{display:none;position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:14px 40px 14px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:13.5px}
+#iosTip.show{display:block}
+#iosTip button{position:absolute;right:8px;top:8px;border:0;background:var(--shade);border-radius:8px;width:28px;height:28px;color:var(--ink)}
+</style>
+</head>
+<body>
+<div id="splash" aria-hidden="true"><img src="splash.png" alt=""><div class="st">Diagnóstico de Falhas<br>Sistema Sanitário Glova</div><div class="sb">Falha · Causa · Ação corretiva</div><div class="ld"><i></i></div></div>
+<script>(function(){var s=document.getElementById('splash'),t0=Date.now();function hide(){setTimeout(function(){s.classList.add('out');setTimeout(function(){s.remove()},500)},Math.max(0,1400-(Date.now()-t0)))}if(document.readyState==='complete')hide();else addEventListener('load',hide);})();</script>
+<header>
+  <img src="data:image/png;base64,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" alt="Vale">
+  <div class="tt">
+    <h1>Diagnóstico de Falhas — Sistema Sanitário Glova</h1>
+    <p>Clique em uma falha para ver as causas e as ações corretivas · Manual Glova, Cap. 5</p>
+  </div>
+  <button id="instBtn" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>Instalar app</button>
+  <label class="search" aria-label="Buscar">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Buscar: V5, Reed, PDS, vácuo, sensor…">
+  </label>
+</header>
+
+<div class="filters" id="filters"></div>
+
+<div class="layout closed" id="layout">
+  <div class="zones">
+    <div class="hint" id="hint"><i class="led on falha"></i><span>Observe o LED aceso ou o sintoma no banheiro e <b>clique no card correspondente</b> para abrir o roteiro de diagnóstico.</span></div>
+    <div id="zones"></div>
+    <div class="empty" id="empty">Nenhuma falha encontrada para essa busca.</div>
+  </div>
+  <div class="scrim" id="scrim"></div>
+  <aside class="detail" id="detail" aria-live="polite"></aside>
+</div>
+
+<footer>Fonte: Manual de Instruções Glova — Capítulo 5 “Falha – Causa – Ação corretiva”, Edição Outubro 2012 (Astra Brasil), páginas 78–82. Textos condensados; em caso de dúvida, prevalece o manual.</footer>
+
+<script>
+const S = [
+ {id:"5.1", title:"Falhas do ambiente", sub:"LEDs do lado esquerdo do controlador", color:"#007E7A", light:"#E3F2F1", side:"right", items:[
+  {name:"Falta de ar comprimido", led:"on", type:"falha", causes:[
+    {s:"Ar comprimido < 4 bar no bloco de válvulas", c:"O suprimento de ar comprimido é inferior a 4 bar (pressão medida diretamente no bloco de válvulas do módulo do vaso).", a:"Verificar o suprimento de ar no manômetro externo, fora do banheiro. Se houver pressão, verificar a torneira perto do painel de controle e o encaixe do conector atrás do vaso."},
+    {s:"Sensor de pressão do controlador com defeito", c:"O sensor de pressão no controlador do bloco de válvulas está com defeito.", a:"Substituir o controlador do bloco de válvulas."}]},
+  {name:"Falta de ar comprimido", led:"blink", type:"aviso", causes:[
+    {s:"Fluxo de ar < 3 bar durante a evacuação", c:"O fluxo de ar comprimido cai abaixo de 3 bar durante a evacuação.", a:"Limpar o filtro regulador e aplicar uma nova descarga."}]},
+  {name:"Nível de água baixo", led:"on", type:"falha", causes:[
+    {s:"Tanque de água vazio", c:"O tanque de água está vazio.", a:"Encher o tanque de água."},
+    {s:"Sensor de nível sujo", c:"O sensor de nível está sujo.", a:"Limpar o sensor de nível."},
+    {s:"Sensor de nível com defeito", c:"O sensor de nível está com defeito.", a:"Trocar o sensor de nível."}]},
+  {name:"Tanque de esgoto cheio", led:"on", type:"falha", causes:[
+    {s:"Tanque de esgoto cheio", c:"O tanque de esgoto está cheio.", a:"Esvaziar o tanque."},
+    {s:"Sensor de nível sujo", c:"O sensor de nível está sujo.", a:"Limpar o sensor de nível."},
+    {s:"Sensor de nível com defeito", c:"O sensor de nível está com defeito.", a:"Trocar o sensor de nível."}]}
+ ]},
+ {id:"5.2", title:"Falhas do vaso sanitário", sub:"LEDs do lado direito do controlador", color:"#2F6A8A", light:"#E4EEF4", side:"right", items:[
+  {name:"Sobrepressão no PDS", led:"on", type:"falha", causes:[
+    {s:"Pressão no PDS > 0,3 bar", c:"A pressão no PDS ultrapassa 0,3 bar durante a parada ou quando a evacuação é ativada.", a:"Iniciar descarga de água seguida de uma descarga normal. Se a falha continuar, remover o vaso sanitário para inspeção."},
+    {s:"Controlador de pressão travado aberto", c:"O controlador de pressão está com defeito e permanece constantemente aberto.", a:"Verificar o bloco de válvulas."}]},
+  {name:"Erro do transmissor", led:"on", type:"falha", causes:[
+    {s:"Transmissor de pressão ou ligações com defeito", c:"O transmissor de pressão ou suas ligações estão com defeito.", a:"Verificar o transmissor de pressão e suas ligações."}]},
+  {name:"Erro de vácuo", led:"on", type:"falha", causes:[
+    {s:"Vácuo não alcançado no tempo", c:"A porcentagem de vácuo requerida não é alcançada no tempo desejado. O programa tenta remover a falha automaticamente e a exibe se ocorrer novamente.", a:"Verificar a linha de vácuo quanto a bloqueios parciais."},
+    {s:"Mangueira do transmissor desconectada", c:"Uma mangueira do transmissor de pressão foi desconectada.", a:"Verificar a tubulação."},
+    {s:"Transmissor não envia sinal", c:"O transmissor de pressão está com defeito e falha ao transmitir o sinal.", a:"Trocar o transmissor de pressão."}]},
+  {name:"Erro de vácuo", led:"blink", type:"ni", causes:[
+    {s:"Vácuo não alcançado na última descarga", c:"O nível de vácuo necessário não foi alcançado durante a última descarga.", a:"Verificar a linha de vácuo quanto a vazamentos parciais."},
+    {s:"Vazamento na mangueira do tubo ejetor", c:"A mangueira na válvula do tubo ejetor está com vazamento.", a:"Trocar a mangueira."}]},
+  {name:"Bloqueio na entrada", led:"on", type:"falha", causes:[
+    {s:"Vácuo não se perde após abrir V3", c:"O vácuo obtido não se perde depois do início de V3 (válvula de entrada). O programa tenta remover a falha automaticamente e a exibe se ocorrer novamente.", a:"Verificar o vaso sanitário; se houver bloqueio evidente, ocorrerá uma descarga reversa."},
+    {s:"Papel ou objetos obstruindo a saída", c:"Papel higiênico ou outros objetos obstruem a saída da privada.", a:"Consultar o software e a descarga inversa."}]},
+  {name:"Válvula de entrada não fechada", led:"on", type:"falha", causes:[
+    {s:"Reed não confirma fechamento da entrada", c:"O interruptor Reed não informa o fechamento da válvula de entrada. O programa tenta remover a falha automaticamente e a exibe se ocorrer novamente.", a:"Iniciar a descarga de avaria e observar o ciclo. Se a válvula permanecer aberta, o vácuo não será obtido e a água será perdida na privada."},
+    {s:"Cilindro com defeito / válvula emperrada", c:"O cilindro da válvula de entrada está com defeito ou a válvula de entrada está emperrada.", a:"Ativar V3 manualmente ou pela LavaControl e monitorar. Verificar as conexões de ar da válvula; se o suprimento de ar estiver correto, trocar a válvula de entrada."}]},
+  {name:"Erro no contato Reed", led:"on", type:"falha", causes:[
+    {s:"Reed indica erro com vácuo mantido", c:"O interruptor Reed indica erro (“aceso”) mesmo se o vácuo não desaparecer depois da ativação da V3.", a:"Verificar o cabeamento do Reed; conectar o PC e verificar o sinal do Reed na tela ao ativar V3 manualmente."},
+    {s:"Sem sinal do controlador para V3", c:"O controlador não transmite sinais para a V3 (LED acima da tomada da válvula apagado).", a:"Verificar os sinais de controle elétricos."},
+    {s:"Cilindro da entrada não abre", c:"O cilindro da válvula de entrada está com defeito e não abre.", a:"Trocar a válvula de entrada."},
+    {s:"V3 emperrada", c:"A válvula V3 está emperrada.", a:"Trocar a válvula V3."}]},
+  {name:"Pressão baixa de saída", led:"on", type:"aviso", causes:[
+    {s:"Pressão de descarga abaixo do desejado", c:"A pressão de descarga não chegou ao nível desejado.", a:"Verificar as válvulas de entrada e saída e a válvula Pinch."}]},
+  {name:"Bloqueio na saída", led:"on", type:"falha", causes:[
+    {s:"Tubulação de saída bloqueada / válvula de saída não abre", c:"Bloqueio na tubulação de saída (após a válvula de saída ou na tubulação de efluente) ou válvula de saída sem funcionar: a sobrepressão do PDS não escapa na descarga. O programa tenta resolver automaticamente.", a:"Verificar se a válvula de saída abre. Verificar a tubulação de saída e de efluente quanto a bloqueios e limpá-las."}]},
+  {name:"Bloqueio na saída do ejetor", led:"on", type:"falha", causes:[
+    {s:"Pressão no PDS em vez de vácuo", c:"Durante o esvaziamento é criada pressão no PDS em vez de vácuo — saída do ejetor bloqueada.", a:"Verificar a saída do ejetor: distorção do conector, gelo sob o vagão ou defeito na válvula Pinch."}]},
+  {name:"Erro CAN-Bus", led:"on", type:"falha", causes:[
+    {s:"Cabo PDC-100 ↔ controlador do bloco defeituoso", c:"A conexão do cabo entre o controlador principal PDC-100 e o controlador do bloco de válvulas do vaso está defeituosa.", a:"Verificar a conexão do cabo entre a privada e o controlador do vaso sanitário."},
+    {s:"ID CAN do dispositivo ≠ 1", c:"O número de identificação CAN no controlador do bloco de válvulas é diferente de 1.", a:"Conectar o PC com a LavaControl e mudar o ID CAN para 1 (manual de utilização, cap. 5.1)."}]}
+ ]},
+ {id:"5.3", title:"Outras falhas", sub:"Sem indicação no controlador do vaso", color:"#B8860B", light:"#FDF4DC", side:"left", items:[
+  {name:"Sem água na descarga", led:"none", type:"sem", causes:[
+    {s:"Válvula de descarga não abre", c:"A válvula de descarga não abre.", a:"Ativar a V5 manualmente ou pela LavaControl e verificar se a água entra."},
+    {s:"V5 do bloco fora de operação", c:"A válvula V5 no controle de bloqueio está fora de operação.", a:"Ativar a V5 pela LavaControl e escutar o clique da ativação."},
+    {s:"Sem sinal para V5 (LED do plugue apagado)", c:"O controlador falha ao transmitir sinais para a V5 (LED no plugue da válvula apagado).", a:"Desligar a válvula e verificar o sinal de 24 V DC; trocar a válvula V5."},
+    {s:"Mangueira de ar dobrada", c:"Uma mangueira de ar está dobrada.", a:"Verificar as conexões de ar comprimido do bloco de válvulas."},
+    {s:"Anti-retorno travado (lixo/calcário)", c:"A válvula anti-retorno na entrada de água não funciona devido a lixo ou depósitos calcários.", a:"Limpar ou trocar a válvula."},
+    {s:"Pressurizador de água com defeito", c:"O pressurizador de água está com defeito.", a:"Verificar a membrana e a fonte do pressurizador de água."},
+    {s:"Tanque de água vazio", c:"O tanque de água está vazio.", a:"Encher o tanque."},
+    {s:"Torneira do tanque fechada", c:"A torneira do tanque está fechada.", a:"Abrir a torneira."}]},
+  {name:"Descarga pulverizada (“Foggy”)", led:"none", type:"sem", causes:[
+    {s:"Bicos de descarga calcificados", c:"Os bicos de descarga estão calcificados.", a:"Trocar os bicos de limpeza ou descalcificá-los."},
+    {s:"Filtro de água obstruído", c:"O filtro de água está obstruído.", a:"Limpar o filtro."},
+    {s:"Vazamento tanque → pressurizador (ar)", c:"A canalização do tanque de água até o pressurizador está vazando (ar no sistema).", a:"Verificar toda a vedação da tubulação ou trocá-la (especialmente as mangueiras)."},
+    {s:"Válvula de controle > 5,5 bar", c:"A pressão da válvula de controle está ajustada acima de 5,5 bar.", a:"Conectar o PC e ajustar a válvula para 5,5 bar."}]},
+  {name:"Água descartada constantemente", led:"none", type:"sem", causes:[
+    {s:"V5 não fecha por sujeira", c:"A V5 não fecha devido a lixo depositado.", a:"Limpar a válvula."},
+    {s:"Válvula de descarga com defeito", c:"A válvula de descarga está com defeito.", a:"Trocar a válvula."},
+    {s:"V5 do bloco não fechada", c:"A válvula V5 do bloco de válvulas não está fechada.", a:"Verificar a válvula manualmente ou pela LavaControl."},
+    {s:"V5 com defeito", c:"A válvula V5 está com defeito.", a:"Trocar a válvula V5."}]},
+  {name:"Privada cheia ou mal evacuada", led:"none", type:"sem", causes:[
+    {s:"Vácuo baixo: bloqueio no tubo ejetor de saída", c:"Vácuo insuficiente no PDS por bloqueio parcial no tubo ejetor de saída ou por conexão desviada do PDS para o ejetor.", a:"Limpar a tubulação de saída que passa pelo piso e verificar curvas e bloqueios."},
+    {s:"Vácuo baixo: bicos ejetores obstruídos", c:"Vácuo insuficiente no PDS por bloqueio parcial dos bicos ejetores.", a:"Descalcificar os bicos do ejetor."},
+    {s:"Vácuo baixo: vazamento no PDS", c:"Vácuo insuficiente no PDS por vazamento no sistema PDS.", a:"Testar a pressão do PDS."},
+    {s:"Vácuo baixo: válvula Pinch obstruída", c:"Vácuo insuficiente no PDS por bloqueio parcial na válvula Pinch.", a:"Verificar bloqueios na válvula Pinch; trocar a mangueira da válvula."},
+    {s:"Válvula de entrada não abre totalmente", c:"A válvula de entrada não se abre completamente.", a:"Trocar a válvula de entrada."},
+    {s:"Válvula de saída não fecha / goteja", c:"A válvula de saída não está fechada ou está gotejando.", a:"Verificar a válvula de saída ou trocá-la."},
+    {s:"Resíduos na entrada do PDS", c:"Restos obstruem a válvula de entrada do PDS.", a:"Limpar a válvula de entrada do PDS."}]},
+  {name:"Botão acionado e nada acontece", led:"none", type:"sem", causes:[
+    {s:"Descarga bloqueada por outra falha", c:"Verificação inicial (o manual não indica causa específica).", a:"Verificar se a luz do botão indica ligado. Verificar no controlador de gerenciamento do vaso falhas que bloqueiem a função de descarga e corrigi-las."},
+    {s:"Fusível de proteção queimado", c:"O fusível de proteção do controle está queimado.", a:"Trocar o fusível no gerenciador de controle do vaso sanitário."},
+    {s:"Botão quebrado", c:"O botão do vaso sanitário está quebrado.", a:"Trocar o botão."},
+    {s:"Descongelamento ativado", c:"O modo de descongelamento está ativado.", a:"Desligar provisoriamente o abastecimento de energia, incluindo o esvaziamento do gelo."},
+    {s:"Sem tensão (LED verde apagado)", c:"Nenhuma tensão disponível (o LED verde não acende).", a:"Conectar a alimentação de energia."}]}
+ ]}
+];
+
+
+const LEDTXT = {on:"LED aceso", blink:"LED piscando / intermitente", none:"Sem indicação no controlador"};
+const TYPETXT = {falha:"Falha", aviso:"Aviso", ni:"Tipo não informado", sem:"Sem indicação"};
+const TYPEINFO = {
+  falha:"<b>Falha:</b> a descarga é bloqueada e as saídas de diagnóstico acendem — lâmpada “Erro no vaso sanitário” (OUT15).",
+  aviso:"<b>Aviso / Advertência:</b> o funcionamento continua normal e as saídas de diagnóstico não acendem.",
+  ni:"<b>Tipo não informado:</b> o manual não define se o LED intermitente é Falha ou Aviso.",
+  sem:"<b>Sem indicação:</b> falha percebida no uso, sem LED no controlador do vaso — diagnóstico pelo sintoma."
+};
+const ledCls = f => f.led==="none" ? "led none" : f.led==="blink" ? ("led blink"+(f.type==="ni"?" ni":"")) : ("led on "+(f.type==="aviso"?"aviso":"falha"));
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+
+/* flatten */
+const ALL = [];
+S.forEach(s=>s.items.forEach((f,i)=>ALL.push(Object.assign(f,{sec:s,key:s.id+"-"+(i+1)}))));
+const checked = {};           // key -> Set of cause idx (memória da sessão)
+let current = null, filter = "all", query = "";
+
+/* filters */
+const FILTERS = [["all","Todas"],["falha","Falha"],["aviso","Aviso"],["blink","LED piscando"],["sem","Sem indicação"]];
+$("filters").innerHTML = FILTERS.map(([k,l])=>`<button class="chip${k==="all"?" on":""}" data-f="${k}">${l}</button>`).join("");
+$("filters").onclick = e=>{const b=e.target.closest(".chip"); if(!b) return; filter=b.dataset.f;
+  document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c===b)); render();};
+
+function matches(f){
+  const typeOk = filter==="all" || (filter==="blink" ? f.led==="blink" : f.type===filter);
+  if(!typeOk) return false;
+  if(!query) return true;
+  const hay = norm([f.name,f.sec.title,...f.causes.flatMap(c=>[c.c,c.a,c.s])].join(" "));
+  return query.split(/\s+/).every(t=>hay.includes(t));
+}
+function hl(txt){
+  if(!query) return esc(txt);
+  let out = esc(txt);
+  query.split(/\s+/).filter(Boolean).forEach(t=>{
+    const n = norm(out); let res="", i=0, idx;
+    while((idx=n.indexOf(t,i))!==-1){ res += out.slice(i,idx)+'<span class="hit">'+out.slice(idx,idx+t.length)+'</span>'; i=idx+t.length; }
+    out = res + out.slice(i);
+  });
+  return out;
+}
+
+function render(){
+  let shown = 0;
+  $("zones").innerHTML = S.map(s=>{
+    const tiles = s.items.filter(matches);
+    shown += tiles.length;
+    if(!tiles.length) return "";
+    return `<section class="zone" style="--c:${s.color}">
+      <div class="zone-h"><span class="num">${s.id}</span><div><h2>${s.title}</h2><small>${s.sub}</small></div></div>
+      <div class="panel">${tiles.map(f=>{
+        const n = checked[f.key]?.size||0;
+        return `<button class="tile ${f.type}${current===f?" sel":""}" data-k="${f.key}">
+          <i class="${ledCls(f)}"></i>
+          <div><div class="nm">${hl(f.name)}</div><div class="mt">${LEDTXT[f.led]} · ${TYPETXT[f.type]}</div></div>
+          <span class="cnt">${f.causes.length} causa${f.causes.length>1?"s":""}</span>
+          ${n?`<span class="done">✓ ${n}/${f.causes.length}</span>`:""}
+        </button>`;}).join("")}</div></section>`;
+  }).join("");
+  $("empty").style.display = shown ? "none" : "block";
+}
+$("zones").onclick = e=>{const t=e.target.closest(".tile"); if(t) open(ALL.find(f=>f.key===t.dataset.k));};
+
+function open(f){
+  current = f;
+  const set = checked[f.key] || (checked[f.key]=new Set());
+  const idx = ALL.indexOf(f);
+  const qn = query ? norm(query) : "";
+  $("detail").innerHTML = `
+    <div class="d-h ${f.type}">
+      <div class="d-top"><span>${f.sec.id} · ${f.sec.title}</span><button class="x" id="close" aria-label="Fechar">×</button></div>
+      <div class="d-title"><i class="${ledCls(f)}" style="margin-top:5px"></i><h3>${esc(f.name)}</h3></div>
+      <div class="badges"><span class="badge t">${TYPETXT[f.type]}</span>${f.led!=="none"?`<span class="badge o">${LEDTXT[f.led]}</span>`:""}<span class="badge o">${f.sec.sub}</span></div>
+      <div class="d-info">${TYPEINFO[f.type]}</div>
+      <div class="prog"><span id="pt">${set.size}/${f.causes.length} causas verificadas</span><div class="bar"><i id="pb"></i></div></div>
+    </div>
+    <ol class="steps">${f.causes.map((c,i)=>{
+      const hitStep = qn && qn.split(/\s+/).every(t=>norm(c.c+" "+c.a).includes(t));
+      return `<li class="step${set.has(i)?" ok":""}${hitStep?" open":""}" data-i="${i}">
+        <button class="step-h"><span class="n">${set.has(i)?"✓":i+1}</span><span class="c"><small>Causa provável</small>${hl(c.c)}</span>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="step-b"><div class="act"><small>Ação corretiva</small>${hl(c.a)}</div>
+        <label class="chk"><input type="checkbox"${set.has(i)?" checked":""}> Causa verificada / ação executada</label></div>
+      </li>`;}).join("")}</ol>
+    ${f.type==="ni"?'<div class="note">O manual não define o tipo (Falha/Aviso) para este LED intermitente.</div>':""}
+    <div class="d-foot">
+      <button class="btn" id="prev"${idx===0?" disabled":""}>← Anterior</button>
+      <button class="btn" id="next"${idx===ALL.length-1?" disabled":""}>Próxima →</button>
+      <button class="btn" id="reset">Limpar verificação</button>
+      <button class="btn p" id="print">Imprimir roteiro</button>
+    </div>`;
+  $("layout").classList.remove("closed");
+  $("hint").style.display="none";
+  updProg(); render();
+  $("detail").scrollTop = 0;
+  if(matchMedia("(max-width:980px)").matches===false){
+    const t=document.querySelector(`.tile[data-k="${f.key}"]`); t && t.scrollIntoView({block:"nearest",behavior:"smooth"});
+  }
+}
+function updProg(){
+  const f=current, n=checked[f.key].size;
+  $("pt").textContent = `${n}/${f.causes.length} causas verificadas`;
+  $("pb").style.width = (100*n/f.causes.length)+"%";
+}
+function close(){ current=null; $("layout").classList.add("closed"); $("hint").style.display=""; render(); }
+
+$("detail").addEventListener("click",e=>{
+  if(e.target.closest("#close")) return close();
+  if(e.target.closest("#prev")) return open(ALL[ALL.indexOf(current)-1]);
+  if(e.target.closest("#next")) return open(ALL[ALL.indexOf(current)+1]);
+  if(e.target.closest("#reset")){ checked[current.key].clear(); return open(current); }
+  if(e.target.closest("#print")){ document.querySelectorAll(".step").forEach(s=>s.classList.add("open")); return window.print(); }
+  const h=e.target.closest(".step-h"); if(h) h.parentElement.classList.toggle("open");
+});
+$("detail").addEventListener("change",e=>{
+  if(e.target.type!=="checkbox") return;
+  const li=e.target.closest(".step"), i=+li.dataset.i, set=checked[current.key];
+  e.target.checked ? set.add(i) : set.delete(i);
+  li.classList.toggle("ok",e.target.checked);
+  li.querySelector(".n").textContent = e.target.checked ? "✓" : i+1;
+  if(e.target.checked){ const nx=li.nextElementSibling; li.classList.remove("open"); nx && nx.classList.add("open"); }
+  updProg(); render();
+});
+$("scrim").onclick = close;
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && current) close(); });
+$("q").addEventListener("input",e=>{ query=norm(e.target.value.trim()); render(); if(current) open(current); });
+
+render();
+</script>
+<div id="iosTip" role="dialog"><button type="button" aria-label="Fechar" onclick="this.parentElement.classList.remove('show')">×</button><b>Instalar no iPhone/iPad:</b> toque em <b>Compartilhar</b> (quadrado com seta) e depois em <b>Adicionar à Tela de Início</b>.</div>
+<script>
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+(function(){
+  const btn=document.getElementById('instBtn'), tip=document.getElementById('iosTip');
+  const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  if(standalone) return;
+  let evt=null;
+  addEventListener('beforeinstallprompt',e=>{e.preventDefault();evt=e;btn.classList.add('show');});
+  addEventListener('appinstalled',()=>{btn.classList.remove('show');evt=null;});
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(ios) btn.classList.add('show');
+  btn.onclick=async()=>{
+    if(evt){evt.prompt();await evt.userChoice;evt=null;btn.classList.remove('show');}
+    else if(ios){tip.classList.add('show');}
+  };
+})();
+</script>
+</body>
+</html>

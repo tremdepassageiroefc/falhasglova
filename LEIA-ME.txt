@@ -1,0 +1,10 @@
+DIAGNÓSTICO DE FALHAS GLOVA — instalação como app (PWA, funciona offline)
+
+1) Hospede o conteúdo desta pasta num endereço HTTPS (ex.: GitHub Pages, Netlify Drop
+   ou servidor interno). Todos os arquivos devem ficar na mesma pasta.
+2) No celular, abra o endereço uma vez com internet:
+   - Android (Chrome): menu ⋮ > "Instalar app" ou "Adicionar à tela inicial".
+   - iPhone (Safari): botão Compartilhar > "Adicionar à Tela de Início".
+3) Depois disso o app abre pelo ícone, em tela cheia, mesmo sem sinal.
+
+Para atualizar o conteúdo: troque o index.html e mude 'falhas-glova-v1' em sw.js para 'v2'.
