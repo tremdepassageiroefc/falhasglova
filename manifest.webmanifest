@@ -1,7 +1,7 @@
 {
   "name": "Diagnóstico de Falhas Glova",
   "short_name": "Falhas Glova",
-  "description": "Falha · Causa · Ação corretiva do sistema sanitário Glova (Manual cap. 5)",
+  "description": "Falha · Causa · Ação corretiva do sistema sanitário Glova",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

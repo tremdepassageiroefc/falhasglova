@@ -7,4 +7,4 @@ DIAGNÓSTICO DE FALHAS GLOVA — instalação como app (PWA, funciona offline)
    - iPhone (Safari): botão Compartilhar > "Adicionar à Tela de Início".
 3) Depois disso o app abre pelo ícone, em tela cheia, mesmo sem sinal.
 
-Para atualizar o conteúdo: troque o index.html e mude 'falhas-glova-v1' em sw.js para 'v2'.
+Para atualizar o conteúdo: troque o index.html e aumente o número da versão 'falhas-glova-v7' em sw.js (v6, v7...).
